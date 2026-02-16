@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  # INI KUNCINYA: Memaksa MLflow menggunakan satu file database yang sama
-  MLFLOW_TRACKING_URI: "sqlite:///mlflow.db"
+  # Gunakan ${{ github.workspace }} untuk mendapatkan path absolut ke root repo
+  MLFLOW_TRACKING_URI: "sqlite:///${{ github.workspace }}/mlflow.db"
   CSV_URL: "training/train_pca.csv"
   TARGET_VAR: "Credit_Score"
 
@@ -28,22 +28,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install mlflow scikit-learn pandas numpy
 
+      # Run as a mlflow project
       - name: Run mlflow project
         run: |
-          # Jalankan project di folder 'training'
-          mlflow run training --env-manager=local 
+          mlflow run training --env-manager=local
 
+      # Get latest run_id menggunakan Python API (Lebih Aman)
       - name: Get latest MLflow run_id
-        # Mengambil ID lewat Python lebih aman daripada 'ls' di folder mlruns
         run: |
           RUN_ID=$(python -c "import mlflow; print(mlflow.search_runs(order_by=['start_time DESC']).iloc[0]['run_id'])")
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run_id: $RUN_ID"
 
+      # Build Docker Model
       - name: Build Docker Model
         run: |
-          mlflow models build-docker --model-uri "runs:/$RUN_ID/model" --name "cc" 
-
+          mlflow models build-docker --model-uri "runs:/$RUN_ID/model" --name "cc"
+          
       - name: Log in and Push
         # (Sama seperti kode kamu sebelumnya)
         uses: docker/login-action@v2
