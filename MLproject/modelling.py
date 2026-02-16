@@ -7,6 +7,10 @@ import numpy as np
 import warnings
 import sys
 
+import os
+
+os.environ["MLFLOW_TRACKING_URI"] = "file:./mlruns"
+
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     np.random.seed(40)
