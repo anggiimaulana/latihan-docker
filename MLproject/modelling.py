@@ -7,10 +7,6 @@ import numpy as np
 import warnings
 import sys
 
-import os
-
-os.environ["MLFLOW_TRACKING_URI"] = "file:./mlruns"
-
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     np.random.seed(40)
@@ -39,14 +35,12 @@ if __name__ == "__main__":
 
     model.fit(X_train, y_train)
 
-    # log model
     mlflow.sklearn.log_model(
         sk_model=model,
         artifact_path="model",
         input_example=input_example
     )
 
-    # log metric
     accuracy = model.score(X_test, y_test)
     mlflow.log_metric("accuracy", accuracy)
 
