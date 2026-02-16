@@ -2,70 +2,56 @@ name: CI/CD MLflow
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 env:
+  # INI KUNCINYA: Memaksa MLflow menggunakan satu file database yang sama
+  MLFLOW_TRACKING_URI: "sqlite:///mlflow.db"
   CSV_URL: "training/train_pca.csv"
   TARGET_VAR: "Credit_Score"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
 
-      # Setup Python 3.12.7
       - name: Set up Python 3.12.7
         uses: actions/setup-python@v4
         with:
           python-version: "3.12.7"
-      
-      # Check Env Variables
-      - name: Check Env
-        run: |
-          echo $CSV_URL
-      # Install mlflow
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow  
-          
-      # Run as a mlflow project
+          pip install mlflow scikit-learn pandas numpy
+
       - name: Run mlflow project
         run: |
+          # Jalankan project di folder 'training'
           mlflow run training --env-manager=local 
-      
-      # Get latest run_id
+
       - name: Get latest MLflow run_id
+        # Mengambil ID lewat Python lebih aman daripada 'ls' di folder mlruns
         run: |
-          RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
+          RUN_ID=$(python -c "import mlflow; print(mlflow.search_runs(order_by=['start_time DESC']).iloc[0]['run_id'])")
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run_id: $RUN_ID"
-          
-      # Build Docker Model
+
       - name: Build Docker Model
         run: |
           mlflow models build-docker --model-uri "runs:/$RUN_ID/model" --name "cc" 
 
-      # Login to Docker Hub
-      - name: Log in to Docker Hub
+      - name: Log in and Push
+        # (Sama seperti kode kamu sebelumnya)
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      # Tag the Docker image
-      - name: Tag Docker Image
+      
+      - name: Push to Docker Hub
         run: |
           docker tag cc ${{ secrets.DOCKER_HUB_USERNAME }}/cc:latest
-
-      # Push Docker image to Docker Hub
-      - name: Push Docker Image
-        run: |
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/cc:latest
