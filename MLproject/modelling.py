@@ -26,18 +26,24 @@ if __name__ == "__main__":
     n_estimators = int(sys.argv[1]) if len(sys.argv) > 1 else 505
     max_depth = int(sys.argv[2]) if len(sys.argv) > 2 else 37
 
-    model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_depth=max_depth
-    )
+    # FIX: attach to MLflow run created by mlflow run
+    run_id = os.environ.get("MLFLOW_RUN_ID")
 
-    model.fit(X_train, y_train)
+    with mlflow.start_run(run_id=run_id):
 
-    mlflow.sklearn.log_model(
-        sk_model=model,
-        artifact_path="model",
-        input_example=input_example
-    )
+        model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth
+        )
 
-    accuracy = model.score(X_test, y_test)
-    mlflow.log_metric("accuracy", accuracy)
+        model.fit(X_train, y_train)
+
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model",
+            input_example=input_example
+        )
+
+        accuracy = model.score(X_test, y_test)
+        mlflow.log_metric("accuracy", accuracy)
+        print(f"Model accuracy: {accuracy:.4f}")
