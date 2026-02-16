@@ -45,8 +45,7 @@ jobs:
         run: |
           mlflow models build-docker --model-uri "runs:/$RUN_ID/model" --name "cc"
           
-      - name: Log in and Push
-        # (Sama seperti kode kamu sebelumnya)
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -54,5 +53,6 @@ jobs:
       
       - name: Push to Docker Hub
         run: |
+          # Pastikan nama image 'cc' sesuai dengan yang di-build sebelumnya
           docker tag cc ${{ secrets.DOCKER_HUB_USERNAME }}/cc:latest
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/cc:latest
