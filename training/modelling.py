@@ -27,21 +27,25 @@ if __name__ == "__main__":
     n_estimators = int(sys.argv[1]) if len(sys.argv) > 1 else 505
     max_depth = int(sys.argv[2]) if len(sys.argv) > 2 else 37
 
-    model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        random_state=42
-    )
+    # Bungkus proses training dan logging dalam start_run
+    with mlflow.start_run():
+        model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            random_state=42
+        )
 
-    model.fit(X_train, y_train)
+        model.fit(X_train, y_train)
 
-    mlflow.sklearn.log_model(
-        sk_model=model,
-        artifact_path="model",
-        input_example=input_example
-    )
+        # Logging model
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model",
+            input_example=input_example
+        )
 
-    accuracy = model.score(X_test, y_test)
-    mlflow.log_metric("accuracy", accuracy)
+        # Logging metric
+        accuracy = model.score(X_test, y_test)
+        mlflow.log_metric("accuracy", accuracy)
 
-    print(f"Accuracy: {accuracy}")
+        print(f"Accuracy: {accuracy}")
